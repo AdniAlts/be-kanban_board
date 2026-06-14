@@ -1,0 +1,59 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "Kanban Board API",
+  "dateExported": "2026-06-14T00:00:00.000Z",
+  "version": "1.2",
+  "folders": [],
+  "requests": [
+    {
+      "_id": "task-list",
+      "name": "List Tasks",
+      "method": "GET",
+      "url": "http://localhost:3000/api/tasks"
+    },
+    {
+      "_id": "task-create",
+      "name": "Create Task",
+      "method": "POST",
+      "url": "http://localhost:3000/api/tasks",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"column_id\": 1,\n  \"title\": \"Create task API\",\n  \"description\": \"Add simple CRUD endpoint\",\n  \"position\": 1\n}"
+      }
+    },
+    {
+      "_id": "task-show",
+      "name": "Show Task",
+      "method": "GET",
+      "url": "http://localhost:3000/api/tasks/1"
+    },
+    {
+      "_id": "task-update",
+      "name": "Update Task",
+      "method": "PATCH",
+      "url": "http://localhost:3000/api/tasks/1",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"column_id\": 3,\n  \"title\": \"Review task API\",\n  \"description\": \"Move task to review column\",\n  \"position\": 2\n}"
+      }
+    },
+    {
+      "_id": "task-delete",
+      "name": "Delete Task",
+      "method": "DELETE",
+      "url": "http://localhost:3000/api/tasks/1"
+    }
+  ]
+}
