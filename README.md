@@ -9,7 +9,7 @@ Project ini sengaja dibuat minimal: tidak ada auth, tidak ada dashboard admin, d
 - Express.js
 - SQLite
 - better-sqlite3
-- Thunder Client
+- Swagger UI
 - SQLite Viewer
 
 ## Setup
@@ -58,17 +58,19 @@ PATCH  /api/tasks/:id
 DELETE /api/tasks/:id
 ```
 
-Dokumentasi lengkap ada di [docs/API.md](docs/API.md).
-
-## Thunder Client
-
-Import collection ini ke Thunder Client:
+Dokumentasi interaktif tersedia di:
 
 ```text
-docs/thunder-client/kanban-board-api.json
+http://localhost:3000/api-docs
 ```
 
-Collection berisi request untuk list, create, show, update, dan delete task.
+OpenAPI JSON tersedia di:
+
+```text
+http://localhost:3000/openapi.json
+```
+
+Ringkasan dokumentasi juga ada di [docs/API.md](docs/API.md).
 
 ## SQLite Viewer
 

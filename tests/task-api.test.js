@@ -139,6 +139,24 @@ describe('task API', () => {
     assert.equal(response.body.message, 'Task not found');
   });
 
+  it('serves the OpenAPI document', async () => {
+    const response = await request('/openapi.json');
+
+    assert.equal(response.status, 200);
+    assert.equal(response.body.openapi, '3.1.0');
+    assert.ok(response.body.paths['/api/tasks']);
+    assert.ok(response.body.paths['/api/tasks/{id}']);
+  });
+
+  it('serves Swagger UI', async () => {
+    const response = await request('/api-docs/', {
+      parseJson: false,
+    });
+
+    assert.equal(response.status, 200);
+    assert.match(response.body, /Swagger UI/i);
+  });
+
   async function request(path, options = {}) {
     const response = await fetch(`${baseUrl}${path}`, {
       method: options.method ?? 'GET',
@@ -152,7 +170,7 @@ describe('task API', () => {
 
     return {
       status: response.status,
-      body: text ? JSON.parse(text) : null,
+      body: options.parseJson === false ? text : text ? JSON.parse(text) : null,
     };
   }
 });
