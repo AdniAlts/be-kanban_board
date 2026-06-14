@@ -4,31 +4,13 @@ import { columnExists } from '../models/taskModel.js';
 const MAX_TITLE_LENGTH = 255;
 
 export function parseId(rawId) {
-  const id = Number.parseInt(rawId, 10);
-
-  return Number.isInteger(id) && id > 0 ? id : null;
+  // TODO: Parse rawId menjadi integer positif. Return null jika tidak valid.
+  throw new Error('TODO: lengkapi parseId');
 }
 
 export function validateTaskInput(db, body, { partial = false } = {}) {
-  const errors = {};
-  const data = {};
-
-  if (partial) {
-    validateOptionalColumnId(db, body, errors, data);
-    validateOptionalTitle(body, errors, data);
-  } else {
-    validateRequiredColumnId(db, body, errors, data);
-    validateRequiredTitle(body, errors, data);
-  }
-
-  validateDescription(body, errors, data);
-  validatePosition(body, errors, data);
-
-  if (Object.keys(errors).length > 0) {
-    throw new ApiError(422, 'Validation failed.', errors);
-  }
-
-  return data;
+  // TODO: Jalankan validasi input. Jika ada error, throw ApiError 422.
+  throw new Error('TODO: lengkapi validateTaskInput');
 }
 
 function validateRequiredColumnId(db, body, errors, data) {
@@ -47,17 +29,8 @@ function validateOptionalColumnId(db, body, errors, data) {
 }
 
 function validateColumnIdValue(db, value, errors, data) {
-  if (!Number.isInteger(value)) {
-    errors.column_id = ['The column id must be an integer.'];
-    return;
-  }
-
-  if (!columnExists(db, value)) {
-    errors.column_id = ['The selected column id is invalid.'];
-    return;
-  }
-
-  data.column_id = value;
+  // TODO: Pastikan value integer dan id column ada di database.
+  throw new Error('TODO: lengkapi validateColumnIdValue');
 }
 
 function validateRequiredTitle(body, errors, data) {
@@ -76,53 +49,16 @@ function validateOptionalTitle(body, errors, data) {
 }
 
 function validateTitleValue(value, errors, data) {
-  if (typeof value !== 'string') {
-    errors.title = ['The title must be a string.'];
-    return;
-  }
-
-  const title = value.trim();
-
-  if (title.length === 0) {
-    errors.title = ['The title field is required.'];
-    return;
-  }
-
-  if (title.length > MAX_TITLE_LENGTH) {
-    errors.title = [`The title may not be greater than ${MAX_TITLE_LENGTH} characters.`];
-    return;
-  }
-
-  data.title = title;
+  // TODO: Pastikan title string, tidak kosong, dan maksimal MAX_TITLE_LENGTH.
+  throw new Error('TODO: lengkapi validateTitleValue');
 }
 
 function validateDescription(body, errors, data) {
-  if (!Object.hasOwn(body, 'description')) {
-    return;
-  }
-
-  if (body.description !== null && typeof body.description !== 'string') {
-    errors.description = ['The description must be a string.'];
-    return;
-  }
-
-  data.description = body.description;
+  // TODO: Jika dikirim, description harus string atau null.
+  throw new Error('TODO: lengkapi validateDescription');
 }
 
 function validatePosition(body, errors, data) {
-  if (!Object.hasOwn(body, 'position')) {
-    return;
-  }
-
-  if (!Number.isInteger(body.position)) {
-    errors.position = ['The position must be an integer.'];
-    return;
-  }
-
-  if (body.position < 0) {
-    errors.position = ['The position must be at least 0.'];
-    return;
-  }
-
-  data.position = body.position;
+  // TODO: Jika dikirim, position harus integer dan minimal 0.
+  throw new Error('TODO: lengkapi validatePosition');
 }

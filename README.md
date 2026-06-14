@@ -25,6 +25,12 @@ Tanggung jawab tiap folder:
 | `src/validators` | Mengecek input dari client |
 | `src/models` | Menjalankan query database |
 
+## Latihan Peserta
+
+Branch ini adalah versi latihan. Beberapa bagian kode sengaja belum lengkap dan diberi komentar `TODO`.
+
+Buka [TODO_PESERTA.md](TODO_PESERTA.md), lalu lengkapi kode sampai `npm test` lulus.
+
 ## Tech Stack
 
 - Node.js

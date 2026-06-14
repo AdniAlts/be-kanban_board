@@ -11,63 +11,38 @@ import { parseId, validateTaskInput } from '../validators/taskValidator.js';
 export function createTaskController(db) {
   return {
     index(_request, response) {
-      response.json({ data: listTasks(db) });
+      // TODO: Ambil semua task dari model, lalu kirim response { data: tasks }.
+      throw new Error('TODO: lengkapi controller index');
     },
 
     store(request, response) {
-      const taskData = validateTaskInput(db, request.body);
-      const task = createTask(db, taskData);
-
-      response.status(201).json({ data: task });
+      // TODO: Validasi request.body, buat task baru, lalu kirim status 201.
+      throw new Error('TODO: lengkapi controller store');
     },
 
     show(request, response) {
-      const task = getTaskOrFail(db, request.params.id);
-
-      response.json({ data: task });
+      // TODO: Ambil task berdasarkan id. Jika tidak ada, kembalikan 404.
+      throw new Error('TODO: lengkapi controller show');
     },
 
     update(request, response) {
-      const id = getValidIdOrFail(request.params.id);
-      const taskData = validateTaskInput(db, request.body, { partial: true });
-      const task = updateTask(db, id, taskData);
-
-      if (!task) {
-        throw new ApiError(404, 'Task not found');
-      }
-
-      response.json({ data: task });
+      // TODO: Validasi body secara partial, update task, lalu kirim task terbaru.
+      throw new Error('TODO: lengkapi controller update');
     },
 
     destroy(request, response) {
-      const id = getValidIdOrFail(request.params.id);
-
-      if (!deleteTask(db, id)) {
-        throw new ApiError(404, 'Task not found');
-      }
-
-      response.status(204).send();
+      // TODO: Hapus task berdasarkan id. Jika berhasil, kirim status 204.
+      throw new Error('TODO: lengkapi controller destroy');
     },
   };
 }
 
 function getTaskOrFail(db, rawId) {
-  const id = getValidIdOrFail(rawId);
-  const task = findTask(db, id);
-
-  if (!task) {
-    throw new ApiError(404, 'Task not found');
-  }
-
-  return task;
+  // TODO: Parse id, cari task dari model, dan throw ApiError 404 jika kosong.
+  throw new Error('TODO: lengkapi helper getTaskOrFail');
 }
 
 function getValidIdOrFail(rawId) {
-  const id = parseId(rawId);
-
-  if (!id) {
-    throw new ApiError(404, 'Task not found');
-  }
-
-  return id;
+  // TODO: Gunakan parseId. Jika tidak valid, throw ApiError 404.
+  throw new Error('TODO: lengkapi helper getValidIdOrFail');
 }
