@@ -1,5 +1,5 @@
-import { ApiError } from './errors.js';
-import { columnExists } from './taskRepository.js';
+import { ApiError } from '../errors.js';
+import { columnExists } from '../models/taskModel.js';
 
 const MAX_TITLE_LENGTH = 255;
 

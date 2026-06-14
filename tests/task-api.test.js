@@ -3,7 +3,7 @@ import { after, before, describe, it } from 'node:test';
 
 import { createApp } from '../src/app.js';
 import { createDatabase } from '../src/db.js';
-import { getSeedSummary } from '../src/taskRepository.js';
+import { getSeedSummary } from '../src/models/boardModel.js';
 
 describe('task API', () => {
   let db;

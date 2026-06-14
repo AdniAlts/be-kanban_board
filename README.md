@@ -3,6 +3,28 @@
 Backend sederhana untuk demonstrasi handoff API Kanban board kepada peserta.
 Project ini sengaja dibuat minimal: tidak ada auth, tidak ada dashboard admin, dan tidak ada setup database server.
 
+## Struktur MVC
+
+Project ini memakai pola MVC sederhana agar alurnya mudah diikuti:
+
+```text
+Request
+  -> src/routes/taskRoutes.js
+  -> src/controllers/taskController.js
+  -> src/validators/taskValidator.js
+  -> src/models/taskModel.js
+  -> SQLite
+```
+
+Tanggung jawab tiap folder:
+
+| Folder | Tanggung Jawab |
+| --- | --- |
+| `src/routes` | Mendefinisikan URL dan HTTP method |
+| `src/controllers` | Mengatur request, response, dan status code |
+| `src/validators` | Mengecek input dari client |
+| `src/models` | Menjalankan query database |
+
 ## Tech Stack
 
 - Node.js

@@ -99,13 +99,6 @@ export function columnExists(db, columnId) {
   return Boolean(db.prepare('SELECT 1 FROM columns WHERE id = ?').get(columnId));
 }
 
-export function getSeedSummary(db) {
-  return {
-    boards: db.prepare('SELECT COUNT(*) AS total FROM boards').get().total,
-    columns: db.prepare('SELECT COUNT(*) AS total FROM columns').get().total,
-  };
-}
-
 function toTask(row) {
   return {
     id: row.id,

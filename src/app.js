@@ -3,7 +3,7 @@ import swaggerUi from 'swagger-ui-express';
 
 import { handleError } from './errors.js';
 import { openApiDocument } from './openapi.js';
-import { createTaskRouter } from './routes/tasks.js';
+import { createTaskRouter } from './routes/taskRoutes.js';
 
 export function createApp(db) {
   const app = express();
