@@ -25,33 +25,80 @@ const TASK_SELECT = `
 `;
 
 export function listTasks(db) {
-  // TODO: Ambil semua task, join columns dan boards, urutkan berdasarkan column, position, id.
-  throw new Error('TODO: lengkapi model listTasks');
+  return db
+    .prepare(
+      `${TASK_SELECT}
+       ORDER BY tasks.column_id ASC, tasks.position ASC, tasks.id ASC`,
+    )
+    .all()
+    .map(toTask);
 }
 
 export function findTask(db, id) {
-  // TODO: Cari satu task berdasarkan id. Return null jika tidak ditemukan.
-  throw new Error('TODO: lengkapi model findTask');
+  const row = db.prepare(`${TASK_SELECT} WHERE tasks.id = ?`).get(id);
+
+  return row ? toTask(row) : null;
 }
 
 export function createTask(db, taskData) {
-  // TODO: Insert task baru, lalu return task lengkap dari findTask.
-  throw new Error('TODO: lengkapi model createTask');
+  const now = new Date().toISOString();
+  const result = db
+    .prepare(
+      `INSERT INTO tasks (column_id, title, description, position, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      taskData.column_id,
+      taskData.title,
+      taskData.description ?? null,
+      // TODO PESERTA:
+      // Jika position tidak dikirim dari request, simpan 0 sebagai nilai default.
+      taskData.position,
+      now,
+      now,
+    );
+
+  return findTask(db, result.lastInsertRowid);
 }
 
 export function updateTask(db, id, taskData) {
-  // TODO: Ambil data lama, gabungkan dengan input baru, update row, lalu return task terbaru.
-  throw new Error('TODO: lengkapi model updateTask');
+  const current = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
+
+  if (!current) {
+    return null;
+  }
+
+  const nextTask = {
+    column_id: taskData.column_id ?? current.column_id,
+    title: taskData.title ?? current.title,
+    description:
+      Object.hasOwn(taskData, 'description') ? taskData.description : current.description,
+    position: taskData.position ?? current.position,
+    updated_at: new Date().toISOString(),
+  };
+
+  db.prepare(
+    `UPDATE tasks
+     SET column_id = ?, title = ?, description = ?, position = ?, updated_at = ?
+     WHERE id = ?`,
+  ).run(
+    nextTask.column_id,
+    nextTask.title,
+    nextTask.description,
+    nextTask.position,
+    nextTask.updated_at,
+    id,
+  );
+
+  return findTask(db, id);
 }
 
 export function deleteTask(db, id) {
-  // TODO: Hapus task berdasarkan id. Return true jika ada row yang terhapus.
-  throw new Error('TODO: lengkapi model deleteTask');
+  return db.prepare('DELETE FROM tasks WHERE id = ?').run(id).changes > 0;
 }
 
 export function columnExists(db, columnId) {
-  // TODO: Cek apakah column dengan id tersebut ada.
-  throw new Error('TODO: lengkapi model columnExists');
+  return Boolean(db.prepare('SELECT 1 FROM columns WHERE id = ?').get(columnId));
 }
 
 function toTask(row) {

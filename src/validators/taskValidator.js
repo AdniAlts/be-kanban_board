@@ -4,13 +4,32 @@ import { columnExists } from '../models/taskModel.js';
 const MAX_TITLE_LENGTH = 255;
 
 export function parseId(rawId) {
-  // TODO: Parse rawId menjadi integer positif. Return null jika tidak valid.
+  // TODO PESERTA:
+  // Lengkapi fungsi ini agar id dari URL seperti "1" berubah menjadi angka 1.
+  // Jika id tidak valid, return null.
   throw new Error('TODO: lengkapi parseId');
 }
 
 export function validateTaskInput(db, body, { partial = false } = {}) {
-  // TODO: Jalankan validasi input. Jika ada error, throw ApiError 422.
-  throw new Error('TODO: lengkapi validateTaskInput');
+  const errors = {};
+  const data = {};
+
+  if (partial) {
+    validateOptionalColumnId(db, body, errors, data);
+    validateOptionalTitle(body, errors, data);
+  } else {
+    validateRequiredColumnId(db, body, errors, data);
+    validateRequiredTitle(body, errors, data);
+  }
+
+  validateDescription(body, errors, data);
+  validatePosition(body, errors, data);
+
+  if (Object.keys(errors).length > 0) {
+    throw new ApiError(422, 'Validation failed.', errors);
+  }
+
+  return data;
 }
 
 function validateRequiredColumnId(db, body, errors, data) {
@@ -29,8 +48,17 @@ function validateOptionalColumnId(db, body, errors, data) {
 }
 
 function validateColumnIdValue(db, value, errors, data) {
-  // TODO: Pastikan value integer dan id column ada di database.
-  throw new Error('TODO: lengkapi validateColumnIdValue');
+  if (!Number.isInteger(value)) {
+    errors.column_id = ['The column id must be an integer.'];
+    return;
+  }
+
+  if (!columnExists(db, value)) {
+    errors.column_id = ['The selected column id is invalid.'];
+    return;
+  }
+
+  data.column_id = value;
 }
 
 function validateRequiredTitle(body, errors, data) {
@@ -49,16 +77,53 @@ function validateOptionalTitle(body, errors, data) {
 }
 
 function validateTitleValue(value, errors, data) {
-  // TODO: Pastikan title string, tidak kosong, dan maksimal MAX_TITLE_LENGTH.
-  throw new Error('TODO: lengkapi validateTitleValue');
+  if (typeof value !== 'string') {
+    errors.title = ['The title must be a string.'];
+    return;
+  }
+
+  const title = value.trim();
+
+  if (title.length === 0) {
+    errors.title = ['The title field is required.'];
+    return;
+  }
+
+  if (title.length > MAX_TITLE_LENGTH) {
+    errors.title = [`The title may not be greater than ${MAX_TITLE_LENGTH} characters.`];
+    return;
+  }
+
+  data.title = title;
 }
 
 function validateDescription(body, errors, data) {
-  // TODO: Jika dikirim, description harus string atau null.
-  throw new Error('TODO: lengkapi validateDescription');
+  if (!Object.hasOwn(body, 'description')) {
+    return;
+  }
+
+  if (body.description !== null && typeof body.description !== 'string') {
+    errors.description = ['The description must be a string.'];
+    return;
+  }
+
+  data.description = body.description;
 }
 
 function validatePosition(body, errors, data) {
-  // TODO: Jika dikirim, position harus integer dan minimal 0.
-  throw new Error('TODO: lengkapi validatePosition');
+  if (!Object.hasOwn(body, 'position')) {
+    return;
+  }
+
+  if (!Number.isInteger(body.position)) {
+    errors.position = ['The position must be an integer.'];
+    return;
+  }
+
+  if (body.position < 0) {
+    errors.position = ['The position must be at least 0.'];
+    return;
+  }
+
+  data.position = body.position;
 }
