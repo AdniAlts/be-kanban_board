@@ -1,27 +1,25 @@
 # TODO Peserta: Lengkapi Kanban Board Task API
 
-Project ini adalah backend API sederhana untuk Kanban board. Beberapa kode sengaja belum lengkap dan ditandai dengan `TODO`.
+Project ini adalah backend API sederhana untuk Kanban board. Beberapa bagian kode sengaja belum lengkap dan ditandai dengan `TODO`.
 
-Fokus latihan ini adalah memahami alur API:
+Latihan ini fokus pada API task:
 
 ```text
-Request dari client
--> route memilih controller
--> controller mengatur response
--> validator mengecek request body
--> model menjalankan query database
--> response JSON dikirim kembali ke client
+GET    /api/tasks
+POST   /api/tasks
+GET    /api/tasks/:id
+PUT    /api/tasks/:id
+PATCH  /api/tasks/:id
+DELETE /api/tasks/:id
 ```
 
-## Target Akhir
-
-Jalankan:
+Target akhir:
 
 ```bash
 npm test
 ```
 
-Target akhirnya:
+Harus menghasilkan:
 
 ```text
 tests 9
@@ -29,387 +27,714 @@ pass 9
 fail 0
 ```
 
-## Sebelum Mulai
+## Cara Pakai Panduan Ini
 
-Install dependency:
+Setiap tugas di bawah berisi:
 
-```bash
-npm install
-```
+- file yang harus dibuka
+- bagian kode yang harus diganti
+- syntax yang bisa dicopy
+- penjelasan singkat fungsi kode tersebut
 
-Jalankan test awal:
-
-```bash
-npm test
-```
-
-Di awal, beberapa test akan gagal. Itu normal karena ada kode `TODO` yang harus dilengkapi.
-
-## File yang Harus Dibaca Dulu
-
-Buka file berikut sebelum mulai coding:
+Jangan ubah file ini:
 
 ```text
-docs/API.md
 tests/task-api.test.js
-src/routes/taskRoutes.js
 ```
 
-Yang perlu dipahami:
+File test adalah pemeriksa apakah API sudah benar.
 
-- `docs/API.md` berisi bentuk endpoint, request, dan response.
-- `tests/task-api.test.js` berisi syarat agar tugas dianggap selesai.
-- `src/routes/taskRoutes.js` menunjukkan endpoint mana memanggil controller mana.
-
-Jangan ubah file test.
-
-## Alur Folder MVC
+## Alur MVC Singkat
 
 ```text
-src/routes
-  daftar URL dan HTTP method
+routes
+  memilih controller berdasarkan URL dan HTTP method
 
-src/controllers
-  menerima request dan mengirim response
+controller
+  membaca request, memanggil validator/model, lalu mengirim response
 
-src/validators
+validator
   mengecek input dari client
 
-src/models
-  menjalankan query ke database SQLite
+model
+  menjalankan query SQLite
 ```
 
-Saat mengerjakan satu endpoint, biasanya kamu akan membuka 3 file:
+## Tugas 1: Lengkapi Validator
+
+File yang dibuka:
 
 ```text
-src/controllers/taskController.js
-src/validators/taskValidator.js
-src/models/taskModel.js
-```
-
-## Tugas 1: Buat API untuk Melihat Task
-
-Endpoint yang dikerjakan:
-
-```text
-GET /api/tasks
-GET /api/tasks/:id
-```
-
-File yang harus dibuka:
-
-```text
-src/controllers/taskController.js
-src/models/taskModel.js
 src/validators/taskValidator.js
 ```
 
-Bagian yang dicari:
+Validator bertugas memastikan data dari client aman dan sesuai aturan sebelum masuk database.
 
-```text
-controller:
-- index
-- show
-- getTaskOrFail
-- getValidIdOrFail
+### 1A. Ganti `parseId`
 
-model:
-- listTasks
-- findTask
+Cari:
 
-validator:
-- parseId
-```
-
-Yang harus dilakukan:
-
-1. Di `parseId`, ubah id dari URL menjadi angka.
-2. Jika id bukan angka valid, kembalikan `null`.
-3. Di `listTasks`, ambil semua task dari database.
-4. Urutkan task berdasarkan `column_id`, `position`, lalu `id`.
-5. Di `findTask`, cari satu task berdasarkan id.
-6. Jika task tidak ditemukan, return `null`.
-7. Di controller `index`, kirim response `{ data: tasks }`.
-8. Di controller `show`, kirim response `{ data: task }`.
-9. Jika task tidak ditemukan, lempar `ApiError(404, 'Task not found')`.
-
-Response list harus seperti ini:
-
-```json
-{
-  "data": []
+```js
+export function parseId(rawId) {
+  // TODO: Parse rawId menjadi integer positif. Return null jika tidak valid.
+  throw new Error('TODO: lengkapi parseId');
 }
 ```
 
-Response detail harus seperti ini:
+Ganti dengan:
 
-```json
-{
-  "data": {
-    "id": 1,
-    "column_id": 1,
-    "title": "Create task API"
+```js
+export function parseId(rawId) {
+  const id = Number.parseInt(rawId, 10);
+
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
+```
+
+Fungsinya:
+
+- Mengubah id dari URL, misalnya `"1"`, menjadi angka `1`.
+- Jika id tidak valid, function mengembalikan `null`.
+- Ini dipakai untuk endpoint seperti `GET /api/tasks/:id`.
+
+### 1B. Ganti `validateTaskInput`
+
+Cari:
+
+```js
+export function validateTaskInput(db, body, { partial = false } = {}) {
+  // TODO: Jalankan validasi input. Jika ada error, throw ApiError 422.
+  throw new Error('TODO: lengkapi validateTaskInput');
+}
+```
+
+Ganti dengan:
+
+```js
+export function validateTaskInput(db, body, { partial = false } = {}) {
+  const errors = {};
+  const data = {};
+
+  if (partial) {
+    validateOptionalColumnId(db, body, errors, data);
+    validateOptionalTitle(body, errors, data);
+  } else {
+    validateRequiredColumnId(db, body, errors, data);
+    validateRequiredTitle(body, errors, data);
   }
+
+  validateDescription(body, errors, data);
+  validatePosition(body, errors, data);
+
+  if (Object.keys(errors).length > 0) {
+    throw new ApiError(422, 'Validation failed.', errors);
+  }
+
+  return data;
 }
 ```
 
-Test yang harus mulai diperhatikan:
+Fungsinya:
 
-```text
-lists and shows tasks
-returns not found for an unknown task
+- `errors` menyimpan pesan error validasi.
+- `data` menyimpan data yang sudah valid.
+- `partial = false` dipakai saat create task, jadi `column_id` dan `title` wajib ada.
+- `partial = true` dipakai saat update task, jadi field boleh tidak lengkap.
+- Jika ada error, API mengembalikan status `422`.
+
+### 1C. Ganti `validateColumnIdValue`
+
+Cari:
+
+```js
+function validateColumnIdValue(db, value, errors, data) {
+  // TODO: Pastikan value integer dan id column ada di database.
+  throw new Error('TODO: lengkapi validateColumnIdValue');
+}
 ```
 
-## Tugas 2: Buat API untuk Menambah Task
+Ganti dengan:
 
-Endpoint yang dikerjakan:
+```js
+function validateColumnIdValue(db, value, errors, data) {
+  if (!Number.isInteger(value)) {
+    errors.column_id = ['The column id must be an integer.'];
+    return;
+  }
 
-```text
-POST /api/tasks
+  if (!columnExists(db, value)) {
+    errors.column_id = ['The selected column id is invalid.'];
+    return;
+  }
+
+  data.column_id = value;
+}
 ```
 
-File yang harus dibuka:
+Fungsinya:
+
+- Memastikan `column_id` berupa angka integer.
+- Memastikan column tersebut benar-benar ada di database.
+- Jika valid, nilai disimpan ke `data.column_id`.
+
+### 1D. Ganti `validateTitleValue`
+
+Cari:
+
+```js
+function validateTitleValue(value, errors, data) {
+  // TODO: Pastikan title string, tidak kosong, dan maksimal MAX_TITLE_LENGTH.
+  throw new Error('TODO: lengkapi validateTitleValue');
+}
+```
+
+Ganti dengan:
+
+```js
+function validateTitleValue(value, errors, data) {
+  if (typeof value !== 'string') {
+    errors.title = ['The title must be a string.'];
+    return;
+  }
+
+  const title = value.trim();
+
+  if (title.length === 0) {
+    errors.title = ['The title field is required.'];
+    return;
+  }
+
+  if (title.length > MAX_TITLE_LENGTH) {
+    errors.title = [`The title may not be greater than ${MAX_TITLE_LENGTH} characters.`];
+    return;
+  }
+
+  data.title = title;
+}
+```
+
+Fungsinya:
+
+- Memastikan `title` adalah string.
+- Menghapus spasi depan/belakang dengan `trim()`.
+- Menolak title kosong.
+- Menolak title yang terlalu panjang.
+- Jika valid, title yang sudah rapi disimpan ke `data.title`.
+
+### 1E. Ganti `validateDescription`
+
+Cari:
+
+```js
+function validateDescription(body, errors, data) {
+  // TODO: Jika dikirim, description harus string atau null.
+  throw new Error('TODO: lengkapi validateDescription');
+}
+```
+
+Ganti dengan:
+
+```js
+function validateDescription(body, errors, data) {
+  if (!Object.hasOwn(body, 'description')) {
+    return;
+  }
+
+  if (body.description !== null && typeof body.description !== 'string') {
+    errors.description = ['The description must be a string.'];
+    return;
+  }
+
+  data.description = body.description;
+}
+```
+
+Fungsinya:
+
+- `description` boleh tidak dikirim.
+- Jika dikirim, nilainya harus string atau `null`.
+- `Object.hasOwn` dipakai agar `description: null` tetap terbaca sebagai input valid.
+
+### 1F. Ganti `validatePosition`
+
+Cari:
+
+```js
+function validatePosition(body, errors, data) {
+  // TODO: Jika dikirim, position harus integer dan minimal 0.
+  throw new Error('TODO: lengkapi validatePosition');
+}
+```
+
+Ganti dengan:
+
+```js
+function validatePosition(body, errors, data) {
+  if (!Object.hasOwn(body, 'position')) {
+    return;
+  }
+
+  if (!Number.isInteger(body.position)) {
+    errors.position = ['The position must be an integer.'];
+    return;
+  }
+
+  if (body.position < 0) {
+    errors.position = ['The position must be at least 0.'];
+    return;
+  }
+
+  data.position = body.position;
+}
+```
+
+Fungsinya:
+
+- `position` boleh tidak dikirim.
+- Jika dikirim, harus integer.
+- Nilainya tidak boleh kurang dari `0`.
+
+## Tugas 2: Lengkapi Model
+
+File yang dibuka:
 
 ```text
-src/controllers/taskController.js
-src/validators/taskValidator.js
 src/models/taskModel.js
 ```
 
-Bagian yang dicari:
+Model bertugas membaca dan menulis data ke database SQLite.
 
-```text
-controller:
-- store
+### 2A. Ganti `listTasks`
 
-validator:
-- validateTaskInput
-- validateColumnIdValue
-- validateTitleValue
-- validateDescription
-- validatePosition
+Cari:
 
-model:
-- createTask
-- columnExists
-```
-
-Request body contoh:
-
-```json
-{
-  "column_id": 1,
-  "title": "Create task API",
-  "description": "Add simple task CRUD endpoint.",
-  "position": 1
+```js
+export function listTasks(db) {
+  // TODO: Ambil semua task, join columns dan boards, urutkan berdasarkan column, position, id.
+  throw new Error('TODO: lengkapi model listTasks');
 }
 ```
 
-Yang harus dilakukan:
+Ganti dengan:
 
-1. Di `columnExists`, cek apakah `column_id` ada di table `columns`.
-2. Di validator, buat object `errors` untuk menampung pesan error.
-3. Validasi `column_id`:
-   - wajib ada saat create
-   - harus integer
-   - harus ada di table `columns`
-4. Validasi `title`:
-   - wajib ada saat create
-   - harus string
-   - tidak boleh kosong setelah `trim()`
-   - maksimal 255 karakter
-5. Validasi `description`:
-   - boleh tidak dikirim
-   - boleh string
-   - boleh `null`
-6. Validasi `position`:
-   - boleh tidak dikirim
-   - jika dikirim harus integer
-   - minimal `0`
-7. Jika ada error validasi, lempar `ApiError(422, 'Validation failed.', errors)`.
-8. Di `createTask`, insert task baru ke table `tasks`.
-9. Jika `description` tidak dikirim, simpan `null`.
-10. Jika `position` tidak dikirim, simpan `0`.
-11. Setelah insert, ambil ulang task lengkap dengan `findTask`.
-12. Di controller `store`, return status `201`.
+```js
+export function listTasks(db) {
+  return db
+    .prepare(
+      `${TASK_SELECT}
+       ORDER BY tasks.column_id ASC, tasks.position ASC, tasks.id ASC`,
+    )
+    .all()
+    .map(toTask);
+}
+```
 
-Response sukses harus seperti ini:
+Fungsinya:
 
-```json
-{
-  "data": {
-    "id": 1,
-    "column_id": 1,
-    "title": "Create task API"
+- Mengambil semua task dari database.
+- Mengurutkan task agar rapi sesuai column dan posisi.
+- `.map(toTask)` mengubah hasil query database menjadi response object API.
+
+### 2B. Ganti `findTask`
+
+Cari:
+
+```js
+export function findTask(db, id) {
+  // TODO: Cari satu task berdasarkan id. Return null jika tidak ditemukan.
+  throw new Error('TODO: lengkapi model findTask');
+}
+```
+
+Ganti dengan:
+
+```js
+export function findTask(db, id) {
+  const row = db.prepare(`${TASK_SELECT} WHERE tasks.id = ?`).get(id);
+
+  return row ? toTask(row) : null;
+}
+```
+
+Fungsinya:
+
+- Mencari satu task berdasarkan id.
+- Tanda `?` adalah placeholder prepared statement agar input user tidak langsung digabung ke SQL.
+- Jika tidak ada task, return `null`.
+
+### 2C. Ganti `createTask`
+
+Cari:
+
+```js
+export function createTask(db, taskData) {
+  // TODO: Insert task baru, lalu return task lengkap dari findTask.
+  throw new Error('TODO: lengkapi model createTask');
+}
+```
+
+Ganti dengan:
+
+```js
+export function createTask(db, taskData) {
+  const now = new Date().toISOString();
+  const result = db
+    .prepare(
+      `INSERT INTO tasks (column_id, title, description, position, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+    .run(
+      taskData.column_id,
+      taskData.title,
+      taskData.description ?? null,
+      taskData.position ?? 0,
+      now,
+      now,
+    );
+
+  return findTask(db, result.lastInsertRowid);
+}
+```
+
+Fungsinya:
+
+- Membuat timestamp `created_at` dan `updated_at`.
+- Menyimpan task baru ke table `tasks`.
+- Jika `description` kosong, simpan `null`.
+- Jika `position` kosong, simpan `0`.
+- Setelah insert, ambil ulang task agar response berisi column dan board.
+
+### 2D. Ganti `updateTask`
+
+Cari:
+
+```js
+export function updateTask(db, id, taskData) {
+  // TODO: Ambil data lama, gabungkan dengan input baru, update row, lalu return task terbaru.
+  throw new Error('TODO: lengkapi model updateTask');
+}
+```
+
+Ganti dengan:
+
+```js
+export function updateTask(db, id, taskData) {
+  const current = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
+
+  if (!current) {
+    return null;
   }
+
+  const nextTask = {
+    column_id: taskData.column_id ?? current.column_id,
+    title: taskData.title ?? current.title,
+    description:
+      Object.hasOwn(taskData, 'description') ? taskData.description : current.description,
+    position: taskData.position ?? current.position,
+    updated_at: new Date().toISOString(),
+  };
+
+  db.prepare(
+    `UPDATE tasks
+     SET column_id = ?, title = ?, description = ?, position = ?, updated_at = ?
+     WHERE id = ?`,
+  ).run(
+    nextTask.column_id,
+    nextTask.title,
+    nextTask.description,
+    nextTask.position,
+    nextTask.updated_at,
+    id,
+  );
+
+  return findTask(db, id);
 }
 ```
 
-Response validasi harus seperti ini:
+Fungsinya:
 
-```json
-{
-  "message": "Validation failed.",
-  "errors": {
-    "column_id": [
-      "The selected column id is invalid."
-    ]
-  }
+- Mengambil data lama terlebih dahulu.
+- Jika task tidak ada, return `null`.
+- Field yang tidak dikirim memakai data lama.
+- `description` dicek dengan `Object.hasOwn` agar `description: null` tetap bisa disimpan.
+- Setelah update, ambil ulang task terbaru.
+
+### 2E. Ganti `deleteTask`
+
+Cari:
+
+```js
+export function deleteTask(db, id) {
+  // TODO: Hapus task berdasarkan id. Return true jika ada row yang terhapus.
+  throw new Error('TODO: lengkapi model deleteTask');
 }
 ```
 
-Test yang harus mulai diperhatikan:
+Ganti dengan:
 
-```text
-creates a task
-rejects an invalid column id
+```js
+export function deleteTask(db, id) {
+  return db.prepare('DELETE FROM tasks WHERE id = ?').run(id).changes > 0;
+}
 ```
 
-## Tugas 3: Buat API untuk Mengubah Task
+Fungsinya:
 
-Endpoint yang dikerjakan:
+- Menghapus task berdasarkan id.
+- `.changes > 0` berarti ada row yang berhasil dihapus.
+- Jika tidak ada row terhapus, hasilnya `false`.
 
-```text
-PUT /api/tasks/:id
-PATCH /api/tasks/:id
+### 2F. Ganti `columnExists`
+
+Cari:
+
+```js
+export function columnExists(db, columnId) {
+  // TODO: Cek apakah column dengan id tersebut ada.
+  throw new Error('TODO: lengkapi model columnExists');
+}
 ```
 
-File yang harus dibuka:
+Ganti dengan:
+
+```js
+export function columnExists(db, columnId) {
+  return Boolean(db.prepare('SELECT 1 FROM columns WHERE id = ?').get(columnId));
+}
+```
+
+Fungsinya:
+
+- Mengecek apakah column tujuan task ada.
+- Dipakai saat validasi `column_id`.
+
+## Tugas 3: Lengkapi Controller
+
+File yang dibuka:
 
 ```text
 src/controllers/taskController.js
-src/validators/taskValidator.js
-src/models/taskModel.js
 ```
 
-Bagian yang dicari:
+Controller bertugas menghubungkan request API dengan validator dan model.
 
-```text
-controller:
-- update
+### 3A. Ganti `index`
 
-validator:
-- validateTaskInput
+Cari:
 
-model:
-- updateTask
-- findTask
+```js
+index(_request, response) {
+  // TODO: Ambil semua task dari model, lalu kirim response { data: tasks }.
+  throw new Error('TODO: lengkapi controller index');
+},
 ```
 
-Request body contoh:
+Ganti dengan:
 
-```json
-{
-  "column_id": 3,
-  "title": "Moved task",
-  "position": 2
-}
+```js
+index(_request, response) {
+  response.json({ data: listTasks(db) });
+},
 ```
 
-Yang harus dilakukan:
+Fungsinya:
 
-1. Di controller `update`, ambil id dari `request.params.id`.
-2. Validasi id dengan helper yang sama seperti detail task.
-3. Validasi body dengan mode partial:
+- Menangani `GET /api/tasks`.
+- Mengirim semua task dalam format `{ data: [...] }`.
 
-   ```js
-   validateTaskInput(db, request.body, { partial: true })
-   ```
+### 3B. Ganti `store`
 
-4. Mode partial artinya field boleh tidak lengkap.
-5. Jika field tidak dikirim, pakai data lama dari database.
-6. Jika `description` dikirim dengan nilai `null`, simpan `null`.
-7. Di `updateTask`, cari task lama dulu.
-8. Jika task lama tidak ada, return `null`.
-9. Jika ada, jalankan query `UPDATE`.
-10. Setelah update, ambil ulang task terbaru dengan `findTask`.
-11. Jika controller menerima `null`, lempar `ApiError(404, 'Task not found')`.
-12. Jika berhasil, return `{ data: task }`.
+Cari:
 
-Response sukses harus seperti ini:
+```js
+store(request, response) {
+  // TODO: Validasi request.body, buat task baru, lalu kirim status 201.
+  throw new Error('TODO: lengkapi controller store');
+},
+```
 
-```json
-{
-  "data": {
-    "id": 1,
-    "column_id": 3,
-    "title": "Moved task"
+Ganti dengan:
+
+```js
+store(request, response) {
+  const taskData = validateTaskInput(db, request.body);
+  const task = createTask(db, taskData);
+
+  response.status(201).json({ data: task });
+},
+```
+
+Fungsinya:
+
+- Menangani `POST /api/tasks`.
+- Memvalidasi request body.
+- Membuat task baru.
+- Mengirim status `201 Created`.
+
+### 3C. Ganti `show`
+
+Cari:
+
+```js
+show(request, response) {
+  // TODO: Ambil task berdasarkan id. Jika tidak ada, kembalikan 404.
+  throw new Error('TODO: lengkapi controller show');
+},
+```
+
+Ganti dengan:
+
+```js
+show(request, response) {
+  const task = getTaskOrFail(db, request.params.id);
+
+  response.json({ data: task });
+},
+```
+
+Fungsinya:
+
+- Menangani `GET /api/tasks/:id`.
+- Jika task ada, response berisi `{ data: task }`.
+- Jika task tidak ada, helper akan melempar error `404`.
+
+### 3D. Ganti `update`
+
+Cari:
+
+```js
+update(request, response) {
+  // TODO: Validasi body secara partial, update task, lalu kirim task terbaru.
+  throw new Error('TODO: lengkapi controller update');
+},
+```
+
+Ganti dengan:
+
+```js
+update(request, response) {
+  const id = getValidIdOrFail(request.params.id);
+  const taskData = validateTaskInput(db, request.body, { partial: true });
+  const task = updateTask(db, id, taskData);
+
+  if (!task) {
+    throw new ApiError(404, 'Task not found');
   }
+
+  response.json({ data: task });
+},
+```
+
+Fungsinya:
+
+- Menangani `PUT /api/tasks/:id` dan `PATCH /api/tasks/:id`.
+- `partial: true` berarti body boleh tidak lengkap.
+- Jika task tidak ditemukan, API mengembalikan `404`.
+
+### 3E. Ganti `destroy`
+
+Cari:
+
+```js
+destroy(request, response) {
+  // TODO: Hapus task berdasarkan id. Jika berhasil, kirim status 204.
+  throw new Error('TODO: lengkapi controller destroy');
+},
+```
+
+Ganti dengan:
+
+```js
+destroy(request, response) {
+  const id = getValidIdOrFail(request.params.id);
+
+  if (!deleteTask(db, id)) {
+    throw new ApiError(404, 'Task not found');
+  }
+
+  response.status(204).send();
+},
+```
+
+Fungsinya:
+
+- Menangani `DELETE /api/tasks/:id`.
+- Jika berhasil, mengirim status `204 No Content`.
+- Jika task tidak ditemukan, mengirim `404`.
+
+### 3F. Ganti `getTaskOrFail`
+
+Cari:
+
+```js
+function getTaskOrFail(db, rawId) {
+  // TODO: Parse id, cari task dari model, dan throw ApiError 404 jika kosong.
+  throw new Error('TODO: lengkapi helper getTaskOrFail');
 }
 ```
 
-Test yang harus mulai diperhatikan:
+Ganti dengan:
+
+```js
+function getTaskOrFail(db, rawId) {
+  const id = getValidIdOrFail(rawId);
+  const task = findTask(db, id);
+
+  if (!task) {
+    throw new ApiError(404, 'Task not found');
+  }
+
+  return task;
+}
+```
+
+Fungsinya:
+
+- Mengambil task berdasarkan id.
+- Jika id tidak valid atau task tidak ada, API mengembalikan `404`.
+
+### 3G. Ganti `getValidIdOrFail`
+
+Cari:
+
+```js
+function getValidIdOrFail(rawId) {
+  // TODO: Gunakan parseId. Jika tidak valid, throw ApiError 404.
+  throw new Error('TODO: lengkapi helper getValidIdOrFail');
+}
+```
+
+Ganti dengan:
+
+```js
+function getValidIdOrFail(rawId) {
+  const id = parseId(rawId);
+
+  if (!id) {
+    throw new ApiError(404, 'Task not found');
+  }
+
+  return id;
+}
+```
+
+Fungsinya:
+
+- Memastikan id dari URL valid.
+- Jika tidak valid, API mengembalikan `404`.
+
+## Urutan Pengerjaan yang Disarankan
+
+Kerjakan dengan urutan ini agar error lebih mudah dipahami:
 
 ```text
-updates and moves a task to another column
+1. src/validators/taskValidator.js
+2. src/models/taskModel.js
+3. src/controllers/taskController.js
+4. npm test
 ```
 
-## Tugas 4: Buat API untuk Menghapus Task
-
-Endpoint yang dikerjakan:
-
-```text
-DELETE /api/tasks/:id
-```
-
-File yang harus dibuka:
-
-```text
-src/controllers/taskController.js
-src/models/taskModel.js
-src/validators/taskValidator.js
-```
-
-Bagian yang dicari:
-
-```text
-controller:
-- destroy
-- getValidIdOrFail
-
-model:
-- deleteTask
-
-validator:
-- parseId
-```
-
-Yang harus dilakukan:
-
-1. Di controller `destroy`, ambil id dari URL.
-2. Validasi id dengan `getValidIdOrFail`.
-3. Di `deleteTask`, hapus task berdasarkan id.
-4. Cek hasil delete dari `.changes`.
-5. Jika `.changes > 0`, berarti delete berhasil.
-6. Jika tidak ada row terhapus, return `false`.
-7. Jika controller menerima `false`, lempar `ApiError(404, 'Task not found')`.
-8. Jika berhasil, kirim status `204` tanpa body.
-
-Test yang harus mulai diperhatikan:
-
-```text
-deletes a task
-returns not found for an unknown task
-```
-
-## Aturan yang Tidak Boleh Diubah
-
-- Jangan ubah file `tests/task-api.test.js`.
-- Jangan ubah bentuk response API.
-- Jangan hapus Swagger atau OpenAPI.
-- Jangan hardcode task langsung di controller.
-- Jangan gabungkan input user langsung ke string SQL.
-- Gunakan prepared statement dari `better-sqlite3`.
-
-## Cara Mengecek Setelah Mengerjakan
-
-Jalankan:
-
-```bash
-npm test
-```
-
-Jika gagal, baca nama test yang gagal.
+Jika test masih gagal, lihat nama test yang gagal.
 
 Contoh:
 
@@ -417,17 +742,15 @@ Contoh:
 creates a task
 ```
 
-Artinya masalah ada di API:
+Artinya cek endpoint:
 
 ```text
 POST /api/tasks
 ```
 
-Jika error masih bertuliskan `TODO`, berarti bagian itu belum diganti dengan kode.
+## Checklist Akhir
 
-## Checklist Selesai
-
-Pastikan semua ini sudah benar:
+Pastikan semua ini benar:
 
 - `GET /api/tasks` return status `200`
 - `POST /api/tasks` return status `201`
