@@ -51,9 +51,7 @@ export function createTask(db, taskData) {
       taskData.column_id,
       taskData.title,
       taskData.description ?? null,
-      // TODO PESERTA:
-      // Jika position tidak dikirim dari request, simpan 0 sebagai nilai default.
-      taskData.position,
+      taskData.position ?? 0,
       now,
       now,
     );
