@@ -4,9 +4,10 @@ import { columnExists } from '../models/taskModel.js';
 const MAX_TITLE_LENGTH = 255;
 
 export function parseId(rawId) {
-  const id = Number.parseInt(rawId, 10);
-
-  return Number.isInteger(id) && id > 0 ? id : null;
+  // TODO PESERTA:
+  // Lengkapi fungsi ini agar id dari URL seperti "1" berubah menjadi angka 1.
+  // Jika id tidak valid, return null.
+  throw new Error('TODO: lengkapi parseId');
 }
 
 export function validateTaskInput(db, body, { partial = false } = {}) {
