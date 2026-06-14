@@ -1,22 +1,27 @@
 # TODO Peserta: Lengkapi Kanban Board Task API
 
-Project ini sudah disusun dengan pola MVC:
+Project ini adalah backend API sederhana untuk Kanban board. Beberapa kode sengaja belum lengkap dan ditandai dengan `TODO`.
+
+Fokus latihan ini adalah memahami alur API:
 
 ```text
-Request -> Routes -> Controller -> Validator -> Model -> SQLite -> Response JSON
+Request dari client
+-> route memilih controller
+-> controller mengatur response
+-> validator mengecek request body
+-> model menjalankan query database
+-> response JSON dikirim kembali ke client
 ```
-
-Beberapa bagian kode sengaja belum lengkap dan diberi komentar `TODO`. Fokus peserta bukan menghafal nama fungsi, tetapi melengkapi API task agar kontraknya sesuai dokumentasi dan test.
 
 ## Target Akhir
 
-Command ini harus lulus:
+Jalankan:
 
 ```bash
 npm test
 ```
 
-Target:
+Target akhirnya:
 
 ```text
 tests 9
@@ -24,101 +29,119 @@ pass 9
 fail 0
 ```
 
-## File yang Perlu Dibuka
+## Sebelum Mulai
 
-Buka file ini berurutan:
+Install dependency:
+
+```bash
+npm install
+```
+
+Jalankan test awal:
+
+```bash
+npm test
+```
+
+Di awal, beberapa test akan gagal. Itu normal karena ada kode `TODO` yang harus dilengkapi.
+
+## File yang Harus Dibaca Dulu
+
+Buka file berikut sebelum mulai coding:
 
 ```text
+docs/API.md
+tests/task-api.test.js
 src/routes/taskRoutes.js
+```
+
+Yang perlu dipahami:
+
+- `docs/API.md` berisi bentuk endpoint, request, dan response.
+- `tests/task-api.test.js` berisi syarat agar tugas dianggap selesai.
+- `src/routes/taskRoutes.js` menunjukkan endpoint mana memanggil controller mana.
+
+Jangan ubah file test.
+
+## Alur Folder MVC
+
+```text
+src/routes
+  daftar URL dan HTTP method
+
+src/controllers
+  menerima request dan mengirim response
+
+src/validators
+  mengecek input dari client
+
+src/models
+  menjalankan query ke database SQLite
+```
+
+Saat mengerjakan satu endpoint, biasanya kamu akan membuka 3 file:
+
+```text
 src/controllers/taskController.js
 src/validators/taskValidator.js
 src/models/taskModel.js
-tests/task-api.test.js
-docs/API.md
 ```
 
-Alur sederhananya:
+## Tugas 1: Buat API untuk Melihat Task
 
-```text
-routes
-  menentukan endpoint dan HTTP method
-
-controller
-  membaca request, memanggil validator/model, lalu mengirim response
-
-validator
-  memastikan request body valid sebelum masuk database
-
-model
-  menjalankan query SQLite
-
-tests dan docs/API.md
-  menjadi kontrak API yang harus dipenuhi
-```
-
-## Tugas 1: API List dan Detail Task
-
-Endpoint:
+Endpoint yang dikerjakan:
 
 ```text
 GET /api/tasks
 GET /api/tasks/:id
 ```
 
-Yang harus dibuat:
-
-- `GET /api/tasks` mengambil semua task dari database.
-- Task diurutkan berdasarkan `column_id`, `position`, lalu `id`.
-- Response list harus berbentuk:
-
-  ```json
-  {
-    "data": []
-  }
-  ```
-
-- `GET /api/tasks/:id` mengambil satu task berdasarkan id.
-- Jika task tidak ditemukan, return status `404`.
-
-Response task harus berisi data task, column, dan board seperti contoh di `docs/API.md`.
-
-Test yang terkait:
+File yang harus dibuka:
 
 ```text
-lists and shows tasks
-returns not found for an unknown task
+src/controllers/taskController.js
+src/models/taskModel.js
+src/validators/taskValidator.js
 ```
 
-## Tugas 2: API Create Task dan Validasi Request
-
-Endpoint:
+Bagian yang dicari:
 
 ```text
-POST /api/tasks
+controller:
+- index
+- show
+- getTaskOrFail
+- getValidIdOrFail
+
+model:
+- listTasks
+- findTask
+
+validator:
+- parseId
 ```
 
-Request body yang valid:
+Yang harus dilakukan:
+
+1. Di `parseId`, ubah id dari URL menjadi angka.
+2. Jika id bukan angka valid, kembalikan `null`.
+3. Di `listTasks`, ambil semua task dari database.
+4. Urutkan task berdasarkan `column_id`, `position`, lalu `id`.
+5. Di `findTask`, cari satu task berdasarkan id.
+6. Jika task tidak ditemukan, return `null`.
+7. Di controller `index`, kirim response `{ data: tasks }`.
+8. Di controller `show`, kirim response `{ data: task }`.
+9. Jika task tidak ditemukan, lempar `ApiError(404, 'Task not found')`.
+
+Response list harus seperti ini:
 
 ```json
 {
-  "column_id": 1,
-  "title": "Create task API",
-  "description": "Add simple task CRUD endpoint.",
-  "position": 1
+  "data": []
 }
 ```
 
-Yang harus dibuat:
-
-- Validasi `column_id` wajib ada saat create.
-- `column_id` harus integer dan harus ada di table `columns`.
-- Validasi `title` wajib ada, harus string, tidak boleh kosong, dan maksimal 255 karakter.
-- `description` boleh string, `null`, atau tidak dikirim.
-- `position` boleh tidak dikirim; jika dikirim harus integer minimal `0`.
-- Jika validasi gagal, return status `422`.
-- Jika berhasil, insert task ke database dan return status `201`.
-
-Response sukses:
+Response detail harus seperti ini:
 
 ```json
 {
@@ -130,7 +153,99 @@ Response sukses:
 }
 ```
 
-Response validasi:
+Test yang harus mulai diperhatikan:
+
+```text
+lists and shows tasks
+returns not found for an unknown task
+```
+
+## Tugas 2: Buat API untuk Menambah Task
+
+Endpoint yang dikerjakan:
+
+```text
+POST /api/tasks
+```
+
+File yang harus dibuka:
+
+```text
+src/controllers/taskController.js
+src/validators/taskValidator.js
+src/models/taskModel.js
+```
+
+Bagian yang dicari:
+
+```text
+controller:
+- store
+
+validator:
+- validateTaskInput
+- validateColumnIdValue
+- validateTitleValue
+- validateDescription
+- validatePosition
+
+model:
+- createTask
+- columnExists
+```
+
+Request body contoh:
+
+```json
+{
+  "column_id": 1,
+  "title": "Create task API",
+  "description": "Add simple task CRUD endpoint.",
+  "position": 1
+}
+```
+
+Yang harus dilakukan:
+
+1. Di `columnExists`, cek apakah `column_id` ada di table `columns`.
+2. Di validator, buat object `errors` untuk menampung pesan error.
+3. Validasi `column_id`:
+   - wajib ada saat create
+   - harus integer
+   - harus ada di table `columns`
+4. Validasi `title`:
+   - wajib ada saat create
+   - harus string
+   - tidak boleh kosong setelah `trim()`
+   - maksimal 255 karakter
+5. Validasi `description`:
+   - boleh tidak dikirim
+   - boleh string
+   - boleh `null`
+6. Validasi `position`:
+   - boleh tidak dikirim
+   - jika dikirim harus integer
+   - minimal `0`
+7. Jika ada error validasi, lempar `ApiError(422, 'Validation failed.', errors)`.
+8. Di `createTask`, insert task baru ke table `tasks`.
+9. Jika `description` tidak dikirim, simpan `null`.
+10. Jika `position` tidak dikirim, simpan `0`.
+11. Setelah insert, ambil ulang task lengkap dengan `findTask`.
+12. Di controller `store`, return status `201`.
+
+Response sukses harus seperti ini:
+
+```json
+{
+  "data": {
+    "id": 1,
+    "column_id": 1,
+    "title": "Create task API"
+  }
+}
+```
+
+Response validasi harus seperti ini:
 
 ```json
 {
@@ -143,20 +258,42 @@ Response validasi:
 }
 ```
 
-Test yang terkait:
+Test yang harus mulai diperhatikan:
 
 ```text
 creates a task
 rejects an invalid column id
 ```
 
-## Tugas 3: API Update dan Pindah Column
+## Tugas 3: Buat API untuk Mengubah Task
 
-Endpoint:
+Endpoint yang dikerjakan:
 
 ```text
 PUT /api/tasks/:id
 PATCH /api/tasks/:id
+```
+
+File yang harus dibuka:
+
+```text
+src/controllers/taskController.js
+src/validators/taskValidator.js
+src/models/taskModel.js
+```
+
+Bagian yang dicari:
+
+```text
+controller:
+- update
+
+validator:
+- validateTaskInput
+
+model:
+- updateTask
+- findTask
 ```
 
 Request body contoh:
@@ -169,15 +306,27 @@ Request body contoh:
 }
 ```
 
-Yang harus dibuat:
+Yang harus dilakukan:
 
-- Update boleh partial, jadi field yang tidak dikirim tetap memakai data lama.
-- `column_id`, `title`, `description`, dan `position` tetap divalidasi jika dikirim.
-- `description: null` harus bisa disimpan sebagai `null`.
-- Jika task tidak ditemukan, return status `404`.
-- Jika berhasil, return task terbaru.
+1. Di controller `update`, ambil id dari `request.params.id`.
+2. Validasi id dengan helper yang sama seperti detail task.
+3. Validasi body dengan mode partial:
 
-Response sukses:
+   ```js
+   validateTaskInput(db, request.body, { partial: true })
+   ```
+
+4. Mode partial artinya field boleh tidak lengkap.
+5. Jika field tidak dikirim, pakai data lama dari database.
+6. Jika `description` dikirim dengan nilai `null`, simpan `null`.
+7. Di `updateTask`, cari task lama dulu.
+8. Jika task lama tidak ada, return `null`.
+9. Jika ada, jalankan query `UPDATE`.
+10. Setelah update, ambil ulang task terbaru dengan `findTask`.
+11. Jika controller menerima `null`, lempar `ApiError(404, 'Task not found')`.
+12. Jika berhasil, return `{ data: task }`.
+
+Response sukses harus seperti ini:
 
 ```json
 {
@@ -189,43 +338,70 @@ Response sukses:
 }
 ```
 
-Test yang terkait:
+Test yang harus mulai diperhatikan:
 
 ```text
 updates and moves a task to another column
 ```
 
-## Tugas 4: API Delete Task
+## Tugas 4: Buat API untuk Menghapus Task
 
-Endpoint:
+Endpoint yang dikerjakan:
 
 ```text
 DELETE /api/tasks/:id
 ```
 
-Yang harus dibuat:
+File yang harus dibuka:
 
-- Hapus task berdasarkan id.
-- Jika berhasil, return status `204` tanpa body.
-- Jika task tidak ditemukan, return status `404`.
+```text
+src/controllers/taskController.js
+src/models/taskModel.js
+src/validators/taskValidator.js
+```
 
-Test yang terkait:
+Bagian yang dicari:
+
+```text
+controller:
+- destroy
+- getValidIdOrFail
+
+model:
+- deleteTask
+
+validator:
+- parseId
+```
+
+Yang harus dilakukan:
+
+1. Di controller `destroy`, ambil id dari URL.
+2. Validasi id dengan `getValidIdOrFail`.
+3. Di `deleteTask`, hapus task berdasarkan id.
+4. Cek hasil delete dari `.changes`.
+5. Jika `.changes > 0`, berarti delete berhasil.
+6. Jika tidak ada row terhapus, return `false`.
+7. Jika controller menerima `false`, lempar `ApiError(404, 'Task not found')`.
+8. Jika berhasil, kirim status `204` tanpa body.
+
+Test yang harus mulai diperhatikan:
 
 ```text
 deletes a task
 returns not found for an unknown task
 ```
 
-## Aturan Penting
+## Aturan yang Tidak Boleh Diubah
 
-- Jangan ubah file test.
+- Jangan ubah file `tests/task-api.test.js`.
 - Jangan ubah bentuk response API.
-- Gunakan prepared statement dari `better-sqlite3`.
+- Jangan hapus Swagger atau OpenAPI.
+- Jangan hardcode task langsung di controller.
 - Jangan gabungkan input user langsung ke string SQL.
-- Gunakan `ApiError` untuk error `404` dan `422`.
-- Swagger dan OpenAPI harus tetap bisa dibuka.
+- Gunakan prepared statement dari `better-sqlite3`.
 
-## Cara Mengecek
+## Cara Mengecek Setelah Mengerjakan
 
 Jalankan:
 
@@ -233,16 +409,33 @@ Jalankan:
 npm test
 ```
 
-Kalau masih gagal, baca nama test yang gagal. Nama test menunjukkan API mana yang belum sesuai.
+Jika gagal, baca nama test yang gagal.
 
-Checklist akhir:
+Contoh:
 
-- `GET /api/tasks` return `200`
-- `POST /api/tasks` return `201`
-- `GET /api/tasks/:id` return `200` jika task ada
+```text
+creates a task
+```
+
+Artinya masalah ada di API:
+
+```text
+POST /api/tasks
+```
+
+Jika error masih bertuliskan `TODO`, berarti bagian itu belum diganti dengan kode.
+
+## Checklist Selesai
+
+Pastikan semua ini sudah benar:
+
+- `GET /api/tasks` return status `200`
+- `POST /api/tasks` return status `201`
+- `GET /api/tasks/:id` return status `200` jika task ada
 - `PATCH /api/tasks/:id` bisa memindahkan task ke column lain
-- `DELETE /api/tasks/:id` return `204`
-- Column id tidak valid return `422`
-- Task tidak ditemukan return `404`
-- `/openapi.json` tetap return dokumen OpenAPI
-- `/api-docs` tetap membuka Swagger UI
+- `DELETE /api/tasks/:id` return status `204`
+- Column id tidak valid return status `422`
+- Task tidak ditemukan return status `404`
+- `/openapi.json` tetap bisa dibuka
+- `/api-docs` tetap bisa dibuka
+- `npm test` lulus semua
